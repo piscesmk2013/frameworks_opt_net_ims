@@ -33,7 +33,6 @@ import android.telephony.ims.aidl.IImsRegistration;
 import android.telephony.ims.aidl.IImsRegistrationCallback;
 import android.telephony.ims.aidl.IImsSmsListener;
 import android.telephony.ims.aidl.ISipTransport;
-import android.telephony.ims.aidl.ISrvccStartedCallback;
 import android.telephony.ims.feature.CapabilityChangeRequest;
 import android.telephony.ims.feature.MmTelFeature;
 import android.telephony.ims.stub.ImsEcbmImplBase;
@@ -539,35 +538,6 @@ public class MmTelFeatureConnection extends FeatureConnection {
         synchronized (mLock) {
             checkServiceIsReady();
             getServiceInterface(mBinder).setSmsListener(listener);
-        }
-    }
-
-    public void notifySrvccStarted(ISrvccStartedCallback cb)
-            throws RemoteException {
-        synchronized (mLock) {
-            checkServiceIsReady();
-            getServiceInterface(mBinder).notifySrvccStarted(cb);
-        }
-    }
-
-    public void notifySrvccCompleted() throws RemoteException {
-        synchronized (mLock) {
-            checkServiceIsReady();
-            getServiceInterface(mBinder).notifySrvccCompleted();
-        }
-    }
-
-    public void notifySrvccFailed() throws RemoteException {
-        synchronized (mLock) {
-            checkServiceIsReady();
-            getServiceInterface(mBinder).notifySrvccFailed();
-        }
-    }
-
-    public void notifySrvccCanceled() throws RemoteException {
-        synchronized (mLock) {
-            checkServiceIsReady();
-            getServiceInterface(mBinder).notifySrvccCanceled();
         }
     }
 
