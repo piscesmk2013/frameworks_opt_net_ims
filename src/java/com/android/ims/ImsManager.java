@@ -2804,6 +2804,21 @@ public class ImsManager implements FeatureUpdates {
         }
     }
 
+    /**
+     * Notifies that radio triggered IMS deregistration.
+     * @param reason the reason why the deregistration is triggered.
+     */
+    public void triggerDeregistration(@ImsRegistrationImplBase.ImsDeregistrationReason int reason)
+            throws ImsException {
+        MmTelFeatureConnection c = getOrThrowExceptionIfServiceUnavailable();
+        try {
+            c.triggerDeregistration(reason);
+        } catch (RemoteException e) {
+            throw new ImsException("triggerDeregistration", e,
+                    ImsReasonInfo.CODE_LOCAL_IMS_SERVICE_DOWN);
+        }
+    }
+
     public int getImsServiceState() throws ImsException {
         MmTelFeatureConnection c = getOrThrowExceptionIfServiceUnavailable();
         return c.getFeatureState();
@@ -3087,6 +3102,15 @@ public class ImsManager implements FeatureUpdates {
             mMmTelConnectionRef.get().sendSms(token, messageRef, format, smsc, isRetry, pdu);
         } catch (RemoteException e) {
             throw new ImsException("sendSms()", e, ImsReasonInfo.CODE_LOCAL_IMS_SERVICE_DOWN);
+        }
+    }
+
+    public void onMemoryAvailable(int token) throws ImsException {
+        try {
+            mMmTelConnectionRef.get().onMemoryAvailable(token);
+        } catch (RemoteException e) {
+            throw new ImsException("onMemoryAvailable()", e,
+                ImsReasonInfo.CODE_LOCAL_IMS_SERVICE_DOWN);
         }
     }
 
