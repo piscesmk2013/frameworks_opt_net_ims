@@ -49,6 +49,8 @@ import android.telephony.ims.ImsCallSession;
 import android.telephony.ims.ImsMmTelManager;
 import android.telephony.ims.ImsReasonInfo;
 import android.telephony.ims.ImsService;
+import android.telephony.ims.MediaQualityStatus;
+import android.telephony.ims.MediaThreshold;
 import android.telephony.ims.ProvisioningManager;
 import android.telephony.ims.RegistrationManager;
 import android.telephony.ims.RtpHeaderExtensionType;
@@ -2804,9 +2806,45 @@ public class ImsManager implements FeatureUpdates {
         }
     }
 
+    /**
+     * Notifies that radio triggered IMS deregistration.
+     * @param reason the reason why the deregistration is triggered.
+     */
+    public void triggerDeregistration(@ImsRegistrationImplBase.ImsDeregistrationReason int reason)
+            throws ImsException {
+        MmTelFeatureConnection c = getOrThrowExceptionIfServiceUnavailable();
+        try {
+            c.triggerDeregistration(reason);
+        } catch (RemoteException e) {
+            throw new ImsException("triggerDeregistration", e,
+                    ImsReasonInfo.CODE_LOCAL_IMS_SERVICE_DOWN);
+        }
+    }
+
     public int getImsServiceState() throws ImsException {
         MmTelFeatureConnection c = getOrThrowExceptionIfServiceUnavailable();
         return c.getFeatureState();
+    }
+
+    public void setMediaThreshold(@MediaQualityStatus.MediaSessionType int sessionType,
+            MediaThreshold threshold) throws ImsException {
+        MmTelFeatureConnection c = getOrThrowExceptionIfServiceUnavailable();
+        try {
+            c.setMediaThreshold(sessionType, threshold);
+        } catch (RemoteException e) {
+            loge("setMediaThreshold Failed.");
+        }
+    }
+
+    public MediaQualityStatus queryMediaQualityStatus (
+            @MediaQualityStatus.MediaSessionType int sessionType) throws ImsException {
+        MmTelFeatureConnection c = getOrThrowExceptionIfServiceUnavailable();
+        try {
+            return c.queryMediaQualityStatus(sessionType);
+        } catch (RemoteException e) {
+            loge("queryMediaQualityStatus Failed.");
+            return null;
+        }
     }
 
     @Override
@@ -3087,6 +3125,15 @@ public class ImsManager implements FeatureUpdates {
             mMmTelConnectionRef.get().sendSms(token, messageRef, format, smsc, isRetry, pdu);
         } catch (RemoteException e) {
             throw new ImsException("sendSms()", e, ImsReasonInfo.CODE_LOCAL_IMS_SERVICE_DOWN);
+        }
+    }
+
+    public void onMemoryAvailable(int token) throws ImsException {
+        try {
+            mMmTelConnectionRef.get().onMemoryAvailable(token);
+        } catch (RemoteException e) {
+            throw new ImsException("onMemoryAvailable()", e,
+                ImsReasonInfo.CODE_LOCAL_IMS_SERVICE_DOWN);
         }
     }
 

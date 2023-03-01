@@ -42,6 +42,7 @@ import com.android.ims.rcs.uce.util.UceUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -176,14 +177,17 @@ public class DeviceCapabilityInfo {
     /**
      * Update the status that IMS MMTEL is unregistered.
      */
-    public synchronized void updateImsMmtelUnregistered() {
+    public synchronized boolean updateImsMmtelUnregistered() {
         logi("IMS MMTEL unregistered: original state=" + mMmtelRegistered);
+        boolean changed = false;
         if (mMmtelRegistered) {
             mMmtelRegistered = false;
+            changed = true;
         }
         mMmtelNetworkRegType = AccessNetworkConstants.TRANSPORT_TYPE_INVALID;
         mLastSuccessfulCapabilities.clear();
         mPendingPublishCapabilities = null;
+        return changed;
     }
 
     /**
@@ -482,6 +486,18 @@ public class DeviceCapabilityInfo {
     public void resetPresenceCapability() {
         mLastSuccessfulCapabilities.clear();
         mPendingPublishCapabilities = null;
+    }
+
+    public List<RcsContactPresenceTuple> getLastSuccessfulPresenceTuplesWithoutContactUri() {
+        List<RcsContactPresenceTuple> presenceTuples = new ArrayList<>();
+        if (mLastSuccessfulCapabilities.isEmpty()) {
+            return presenceTuples;
+        }
+
+        for (ServiceDescription capability : mLastSuccessfulCapabilities) {
+            presenceTuples.add(capability.getTupleBuilder().build());
+        }
+        return presenceTuples;
     }
 
     @VisibleForTesting
