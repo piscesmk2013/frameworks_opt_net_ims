@@ -1521,6 +1521,7 @@ public class ImsCall implements ICall {
                 setCallSessionMergePending(false);
                 if (mMergePeer != null) mMergePeer.setCallSessionMergePending(false);
                 if (mMergeHost != null) mMergeHost.setCallSessionMergePending(false);
+                mMergeRequestedByConference = false;
                 throw new ImsException("Call update is in progress",
                         ImsReasonInfo.CODE_LOCAL_ILLEGAL_STATE);
             }
@@ -1531,6 +1532,7 @@ public class ImsCall implements ICall {
                 setCallSessionMergePending(false);
                 if (mMergePeer != null) mMergePeer.setCallSessionMergePending(false);
                 if (mMergeHost != null) mMergeHost.setCallSessionMergePending(false);
+                mMergeRequestedByConference = false;
                 throw new ImsException("Peer or host call update is in progress",
                         ImsReasonInfo.CODE_LOCAL_ILLEGAL_STATE);
             }
