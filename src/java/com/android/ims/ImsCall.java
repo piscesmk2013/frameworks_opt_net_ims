@@ -1521,6 +1521,7 @@ public class ImsCall implements ICall {
                 setCallSessionMergePending(false);
                 if (mMergePeer != null) mMergePeer.setCallSessionMergePending(false);
                 if (mMergeHost != null) mMergeHost.setCallSessionMergePending(false);
+                mMergeRequestedByConference = false;
                 throw new ImsException("Call update is in progress",
                         ImsReasonInfo.CODE_LOCAL_ILLEGAL_STATE);
             }
@@ -1531,6 +1532,7 @@ public class ImsCall implements ICall {
                 setCallSessionMergePending(false);
                 if (mMergePeer != null) mMergePeer.setCallSessionMergePending(false);
                 if (mMergeHost != null) mMergeHost.setCallSessionMergePending(false);
+                mMergeRequestedByConference = false;
                 throw new ImsException("Peer or host call update is in progress",
                         ImsReasonInfo.CODE_LOCAL_ILLEGAL_STATE);
             }
@@ -1546,9 +1548,9 @@ public class ImsCall implements ICall {
             if (mHold || (mContext.getResources().getBoolean(
                     com.android.internal.R.bool.skipHoldBeforeMerge))) {
 
-                if (mMergePeer != null && !mMergePeer.isMultiparty() && !isMultiparty()) {
+                if (mMergePeer != null && !mMergePeer.isConferenceHost() && !isConferenceHost()) {
                     // We only set UPDATE_MERGE when we are adding the first
-                    // calls to the Conference.  If there is already a conference
+                    // calls to the Conference.  If there is already a conference host
                     // no special handling is needed. The existing conference
                     // session will just go active and any other sessions will be terminated
                     // if needed.  There will be no merge failed callback.
@@ -1556,7 +1558,8 @@ public class ImsCall implements ICall {
                     // merge is pending.
                     mUpdateRequest = UPDATE_MERGE;
                     mMergePeer.mUpdateRequest = UPDATE_MERGE;
-                } else if (mMergeHost != null && !mMergeHost.isMultiparty() && !isMultiparty()) {
+                } else if (mMergeHost != null && !mMergeHost.isConferenceHost() &&
+                        !isConferenceHost()) {
                     mUpdateRequest = UPDATE_MERGE;
                     mMergeHost.mUpdateRequest = UPDATE_MERGE;
                 }
@@ -1592,21 +1595,22 @@ public class ImsCall implements ICall {
             // Mark both sessions as pending merge.
             this.setCallSessionMergePending(true);
             bgCall.setCallSessionMergePending(true);
-
-            if ((!isMultiparty() && !bgCall.isMultiparty()) || isMultiparty()) {
-                // If neither call is multiparty, the current call is the merge host and the bg call
-                // is the merge peer (ie we're starting a new conference).
+            if ((!isConferenceHost() && !bgCall.isConferenceHost()) || isConferenceHost()) {
+                // If neither call is conference host, the current call is the merge host
+                // and the bg call is the merge peer (ie we're starting a new conference).
                 // OR
-                // If this call is multiparty, it is the merge host and the other call is the merge
-                // peer.
+                // If this call is conference host, it is the merge host and the other call
+                //  is the merge peer.
+                logv("set bg call as merge peer");
                 setMergePeer(bgCall);
             } else {
-                // If the bg call is multiparty, it is the merge host.
+                // If the bg call is conference host, it is the merge host.
+                logv("set bg call as merge host");
                 setMergeHost(bgCall);
             }
         }
 
-        if (isMultiparty()) {
+        if (isConferenceHost()) {
             mMergeRequestedByConference = true;
         } else {
             logi("merge : mMergeRequestedByConference not set");
@@ -1805,6 +1809,15 @@ public class ImsCall implements ICall {
             }
             mSession.sendRttMessage(rttMessage);
         }
+    }
+
+    /**
+     * Checks if the call is RTT call.
+     *
+     * @return true if the call is RTT call
+     */
+    public boolean isRttCall() {
+        return mCallProfile.mMediaProfile.isRttCall();
     }
 
     /**
@@ -2113,6 +2126,10 @@ public class ImsCall implements ICall {
             }
         }
 
+        //Update CallProfile received as part of call end which will update the
+        //call extras if any added as part of call end indication.
+        updateCallProfile();
+
         if (listener != null) {
             try {
                 listener.onCallTerminated(ImsCall.this, reasonInfo);
@@ -2256,10 +2273,6 @@ public class ImsCall implements ICall {
                 // it and figure out where we need to set it for the final conference configuration.
                 ImsCallSession transientConferenceSession = mTransientConferenceSession;
                 mTransientConferenceSession = null;
-
-                // Clear the listener for this transient session, we'll create a new listener
-                // when it is attached to the final ImsCall that it should live on.
-                transientConferenceSession.setListener(null, null);
 
                 // Determine which call the transient session should be moved to.  If the current
                 // call session is still alive and the merge peer's session is not, we have a
@@ -2594,6 +2607,11 @@ public class ImsCall implements ICall {
                 logi("callSessionStartFailed :: not supported for transient conference session=" +
                         session);
                 return;
+            }
+            if (mIsConferenceHost) {
+                // If the dial request was a group calling one, this call would have
+                // been marked the conference host as part of the request.
+                mIsConferenceHost = false;
             }
 
             if (mIsConferenceHost) {
